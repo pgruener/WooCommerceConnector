@@ -222,7 +222,13 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         so.flags.ignore_mandatory = True
 
         # alle orders in ERP = submitted
-        so.save(ignore_permissions=True)
+	try:
+		so.save(ignore_permissions=True)
+	except ValidationError as e:
+		make_woocommerce_log(title="Error while syncing woocommerce_order_id {0}").format(woocommerce_order.get("id")), status="Error", method="create_sales_order", message=frappe.get_traceback(),
+                    request_data=woocommerce_order, exception=False)
+		return so
+
         so.submit()
         #if woocommerce_order.get("status") == "on-hold":
         #    so.save(ignore_permissions=True)
