@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 import frappe
-from frappe import _
+from frappe import _, ValidationError
 from .exceptions import woocommerceError
 from .utils import make_woocommerce_log
 from .sync_customers import create_customer, create_customer_address, create_customer_contact
@@ -221,14 +221,14 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
 
         so.flags.ignore_mandatory = True
 
-        # alle orders in ERP = submitted
-	try:
-		so.save(ignore_permissions=True)
-	except ValidationError as e:
-		make_woocommerce_log(title="Error while syncing woocommerce_order_id {0}").format(woocommerce_order.get("id")), status="Error", method="create_sales_order", message=frappe.get_traceback(),
+        try:
+                so.save(ignore_permissions=True)
+        except ValidationError as e:
+                make_woocommerce_log(title="Error while syncing woocommerce_order_id {0}".format(woocommerce_order.get("id")), status="Error", method="create_sales_order", message=frappe.get_traceback(),
                     request_data=woocommerce_order, exception=False)
-		return so
+                return so
 
+        # alle orders in ERP = submitted
         so.submit()
         #if woocommerce_order.get("status") == "on-hold":
         #    so.save(ignore_permissions=True)
